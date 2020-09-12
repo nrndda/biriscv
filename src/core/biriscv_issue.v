@@ -633,17 +633,13 @@ reg [31:0] scoreboard_r;
 reg        pipe1_mux_lsu_r;
 reg        pipe1_mux_mul_r;
 
-// Check instructions can be issued in the second execution unit
-wire pipe1_ok_w      = issue_b_exec_w | issue_b_branch_w | issue_b_lsu_w | issue_b_mul_w;
-
 // Is this combination of instructions possible to execute concurrently.
 // This excludes result dependencies which may also block secondary execution.
 wire dual_issue_ok_w =   enable_dual_issue_w &&  // Second pipe switched on
-                         pipe1_ok_w &&           // Instruction 2 is possible on second exec unit
                         (((issue_a_exec_w | issue_a_lsu_w | issue_a_mul_w) && issue_b_exec_w)   ||
                          ((issue_a_exec_w | issue_a_lsu_w | issue_a_mul_w) && issue_b_branch_w) ||
-                         ((issue_a_exec_w | issue_a_mul_w) && issue_b_lsu_w)                    ||
-                         ((issue_a_exec_w | issue_a_lsu_w) && issue_b_mul_w)
+                         ((issue_a_exec_w |                 issue_a_mul_w) && issue_b_lsu_w)    ||
+                         ((issue_a_exec_w | issue_a_lsu_w                ) && issue_b_mul_w)
                          ) && ~take_interrupt_i;
 
 always @ *

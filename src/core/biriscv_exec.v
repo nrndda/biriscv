@@ -1,28 +1,3 @@
-//-----------------------------------------------------------------
-//                         biRISC-V CPU
-//                            V0.8.0
-//                     Ultra-Embedded.com
-//                     Copyright 2019-2020
-//
-//                   admin@ultra-embedded.com
-//
-//                     License: Apache 2.0
-//-----------------------------------------------------------------
-// Copyright 2020 Ultra-Embedded.com
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//     http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
-
 module biriscv_exec
 (
     // Inputs
@@ -59,24 +34,26 @@ module biriscv_exec
 //-----------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------
-`include "biriscv_defs.v"
+`include "biriscv_defs_dec.v"
+`include "biriscv_defs_alu.v"
 
 //-------------------------------------------------------------
 // Opcode decode
 //-------------------------------------------------------------
-reg [31:0]  imm20_r;
-reg [31:0]  imm12_r;
-reg [31:0]  bimm_r;
-reg [31:0]  jimm20_r;
-reg [4:0]   shamt_r;
+reg [31:0]  I_imm_r;
+reg [31:0]  S_imm_r;
+reg [31:0]  B_imm_r;
+reg [31:0]  U_imm_r;
+reg [31:0]  J_imm_r;
+reg [31:0]  shamt_r;
 
-always @ *
-begin
-    imm20_r     = {opcode_opcode_i[31:12], 12'b0};
-    imm12_r     = {{20{opcode_opcode_i[31]}}, opcode_opcode_i[31:20]};
-    bimm_r      = {{19{opcode_opcode_i[31]}}, opcode_opcode_i[31], opcode_opcode_i[7], opcode_opcode_i[30:25], opcode_opcode_i[11:8], 1'b0};
-    jimm20_r    = {{12{opcode_opcode_i[31]}}, opcode_opcode_i[19:12], opcode_opcode_i[20], opcode_opcode_i[30:25], opcode_opcode_i[24:21], 1'b0};
-    shamt_r     = opcode_opcode_i[24:20];
+always @* begin
+  shamt_r = {           1'b0    , {11{           1'b0       }}, {9{           1'b0       }},            1'b0    , {6{        1'b0     }}, opcode_opcode_i[24:21], opcode_opcode_i[20]};
+  I_imm_r = {opcode_opcode_i[31], {11{opcode_opcode_i[31   ]}}, {9{opcode_opcode_i[31   ]}},                      opcode_opcode_i[30:25], opcode_opcode_i[24:21], opcode_opcode_i[20]};
+  S_imm_r = {opcode_opcode_i[31], {11{opcode_opcode_i[31   ]}}, {9{opcode_opcode_i[31   ]}},                      opcode_opcode_i[30:25], opcode_opcode_i[11: 8], opcode_opcode_i[ 7]};
+  B_imm_r = {opcode_opcode_i[31], {11{opcode_opcode_i[31   ]}}, {8{opcode_opcode_i[31   ]}}, opcode_opcode_i[ 7], opcode_opcode_i[30:25], opcode_opcode_i[11: 8],            1'b0    };
+  U_imm_r = {opcode_opcode_i[31],     opcode_opcode_i[30:20]  ,    opcode_opcode_i[19:12]  ,            1'b0    , {6{        1'b0     }}, {4{        1'b0     }},            1'b0    };
+  J_imm_r = {opcode_opcode_i[31], {11{opcode_opcode_i[31   ]}},    opcode_opcode_i[19:12]  , opcode_opcode_i[20], opcode_opcode_i[30:25], opcode_opcode_i[24:21],            1'b0    };
 end
 
 //-------------------------------------------------------------
@@ -86,142 +63,121 @@ reg [3:0]  alu_func_r;
 reg [31:0] alu_input_a_r;
 reg [31:0] alu_input_b_r;
 
-always @ *
-begin
+always @* begin:ALU_DEC
+  if ((opcode_opcode_i & `INST_ADD_MASK) == `INST_ADD) begin:ADD
+    alu_func_r     = `ALU_ADD;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_AND_MASK) == `INST_AND) begin:AND
+    alu_func_r     = `ALU_AND;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_OR_MASK) == `INST_OR) begin:OR
+    alu_func_r     = `ALU_OR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SLL_MASK) == `INST_SLL) begin:SLL
+    alu_func_r     = `ALU_SHIFTL;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SRA_MASK) == `INST_SRA) begin:SRA
+    alu_func_r     = `ALU_SHIFTR_ARITH;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SRL_MASK) == `INST_SRL) begin:SRL
+    alu_func_r     = `ALU_SHIFTR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SUB_MASK) == `INST_SUB) begin:SUB
+    alu_func_r     = `ALU_SUB;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_XOR_MASK) == `INST_XOR) begin:XOR
+    alu_func_r     = `ALU_XOR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SLT_MASK) == `INST_SLT) begin:SLT
+    alu_func_r     = `ALU_LESS_THAN_SIGNED;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_SLTU_MASK) == `INST_SLTU) begin:SLTU
+    alu_func_r     = `ALU_LESS_THAN;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = opcode_rb_operand_i;
+  end else
+  if ((opcode_opcode_i & `INST_ADDI_MASK) == `INST_ADDI) begin:ADDI
+    alu_func_r     = `ALU_ADD;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_ANDI_MASK) == `INST_ANDI) begin:ANDI
+    alu_func_r     = `ALU_AND;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_SLTI_MASK) == `INST_SLTI) begin:SLTI
+    alu_func_r     = `ALU_LESS_THAN_SIGNED;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_SLTIU_MASK) == `INST_SLTIU) begin:SLTIU
+    alu_func_r     = `ALU_LESS_THAN;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_ORI_MASK) == `INST_ORI) begin:ORI
+    alu_func_r     = `ALU_OR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_XORI_MASK) == `INST_XORI) begin:XORI
+    alu_func_r     = `ALU_XOR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = I_imm_r;
+  end else
+  if ((opcode_opcode_i & `INST_SLLI_MASK) == `INST_SLLI) begin:SLLI
+    alu_func_r     = `ALU_SHIFTL;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = shamt_r;
+  end else
+  if ((opcode_opcode_i & `INST_SRLI_MASK) == `INST_SRLI) begin:SRLI
+    alu_func_r     = `ALU_SHIFTR;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = shamt_r;
+  end else
+  if ((opcode_opcode_i & `INST_SRAI_MASK) == `INST_SRAI) begin:SRAI
+    alu_func_r     = `ALU_SHIFTR_ARITH;
+    alu_input_a_r  = opcode_ra_operand_i;
+    alu_input_b_r  = shamt_r;
+  end else
+  if ((opcode_opcode_i & `INST_LUI_MASK) == `INST_LUI) begin:LUI
+    alu_func_r     = `ALU_NONE;
+    alu_input_a_r  = U_imm_r;
+    alu_input_b_r  = 32'b0;
+  end else
+  if ((opcode_opcode_i & `INST_AUIPC_MASK) == `INST_AUIPC) begin:AUIPC
+    alu_func_r     = `ALU_ADD;
+    alu_input_a_r  = opcode_pc_i;
+    alu_input_b_r  = U_imm_r;
+  end else
+  if (((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) || ((opcode_opcode_i & `INST_JALR_MASK) == `INST_JALR)) begin:JAL_JALR
+    alu_func_r     = `ALU_ADD;
+    alu_input_a_r  = opcode_pc_i;
+    alu_input_b_r  = 32'd4;
+  end else begin
     alu_func_r     = `ALU_NONE;
     alu_input_a_r  = 32'b0;
     alu_input_b_r  = 32'b0;
-
-    if ((opcode_opcode_i & `INST_ADD_MASK) == `INST_ADD) // add
-    begin
-        alu_func_r     = `ALU_ADD;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_AND_MASK) == `INST_AND) // and
-    begin
-        alu_func_r     = `ALU_AND;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_OR_MASK) == `INST_OR) // or
-    begin
-        alu_func_r     = `ALU_OR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SLL_MASK) == `INST_SLL) // sll
-    begin
-        alu_func_r     = `ALU_SHIFTL;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SRA_MASK) == `INST_SRA) // sra
-    begin
-        alu_func_r     = `ALU_SHIFTR_ARITH;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SRL_MASK) == `INST_SRL) // srl
-    begin
-        alu_func_r     = `ALU_SHIFTR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SUB_MASK) == `INST_SUB) // sub
-    begin
-        alu_func_r     = `ALU_SUB;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_XOR_MASK) == `INST_XOR) // xor
-    begin
-        alu_func_r     = `ALU_XOR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SLT_MASK) == `INST_SLT) // slt
-    begin
-        alu_func_r     = `ALU_LESS_THAN_SIGNED;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_SLTU_MASK) == `INST_SLTU) // sltu
-    begin
-        alu_func_r     = `ALU_LESS_THAN;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = opcode_rb_operand_i;
-    end
-    else if ((opcode_opcode_i & `INST_ADDI_MASK) == `INST_ADDI) // addi
-    begin
-        alu_func_r     = `ALU_ADD;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_ANDI_MASK) == `INST_ANDI) // andi
-    begin
-        alu_func_r     = `ALU_AND;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_SLTI_MASK) == `INST_SLTI) // slti
-    begin
-        alu_func_r     = `ALU_LESS_THAN_SIGNED;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_SLTIU_MASK) == `INST_SLTIU) // sltiu
-    begin
-        alu_func_r     = `ALU_LESS_THAN;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_ORI_MASK) == `INST_ORI) // ori
-    begin
-        alu_func_r     = `ALU_OR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_XORI_MASK) == `INST_XORI) // xori
-    begin
-        alu_func_r     = `ALU_XOR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = imm12_r;
-    end
-    else if ((opcode_opcode_i & `INST_SLLI_MASK) == `INST_SLLI) // slli
-    begin
-        alu_func_r     = `ALU_SHIFTL;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = {27'b0, shamt_r};
-    end
-    else if ((opcode_opcode_i & `INST_SRLI_MASK) == `INST_SRLI) // srli
-    begin
-        alu_func_r     = `ALU_SHIFTR;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = {27'b0, shamt_r};
-    end
-    else if ((opcode_opcode_i & `INST_SRAI_MASK) == `INST_SRAI) // srai
-    begin
-        alu_func_r     = `ALU_SHIFTR_ARITH;
-        alu_input_a_r  = opcode_ra_operand_i;
-        alu_input_b_r  = {27'b0, shamt_r};
-    end
-    else if ((opcode_opcode_i & `INST_LUI_MASK) == `INST_LUI) // lui
-    begin
-        alu_input_a_r  = imm20_r;
-    end
-    else if ((opcode_opcode_i & `INST_AUIPC_MASK) == `INST_AUIPC) // auipc
-    begin
-        alu_func_r     = `ALU_ADD;
-        alu_input_a_r  = opcode_pc_i;
-        alu_input_b_r  = imm20_r;
-    end     
-    else if (((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) || ((opcode_opcode_i & `INST_JALR_MASK) == `INST_JALR)) // jal, jalr
-    begin
-        alu_func_r     = `ALU_ADD;
-        alu_input_a_r  = opcode_pc_i;
-        alu_input_b_r  = 32'd4;
-    end
+  end
 end
 
 
@@ -242,11 +198,7 @@ u_alu
 // Flop ALU output
 //-------------------------------------------------------------
 reg [31:0] result_q;
-always @ (posedge clk_i or posedge rst_i)
-if (rst_i)
-    result_q  <= 32'b0;
-else if (~hold_i)
-    result_q <= alu_p_w;
+always @ (posedge clk_i) if (~hold_i) result_q <= alu_p_w;
 
 assign writeback_value_o  = result_q;
 
@@ -305,13 +257,13 @@ begin
     branch_jmp_r    = 1'b0;
 
     // Default branch_r target is relative to current PC
-    branch_target_r = opcode_pc_i + bimm_r;
+    branch_target_r = opcode_pc_i + B_imm_r;
 
     if ((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) // jal
     begin
         branch_r        = 1'b1;
         branch_taken_r  = 1'b1;
-        branch_target_r = opcode_pc_i + jimm20_r;
+        branch_target_r = opcode_pc_i + J_imm_r;
         branch_call_r   = (opcode_rd_idx_i == 5'd1); // RA
         branch_jmp_r    = 1'b1;
     end
@@ -319,9 +271,9 @@ begin
     begin
         branch_r            = 1'b1;
         branch_taken_r      = 1'b1;
-        branch_target_r     = opcode_ra_operand_i + imm12_r;
+        branch_target_r     = opcode_ra_operand_i + I_imm_r;
         branch_target_r[0]  = 1'b0;
-        branch_ret_r        = (opcode_ra_idx_i == 5'd1 && imm12_r[11:0] == 12'b0); // RA
+        branch_ret_r        = (opcode_ra_idx_i == 5'd1 && I_imm_r[11:0] == 12'b0); // RA
         branch_call_r       = ~branch_ret_r && (opcode_rd_idx_i == 5'd1); // RA
         branch_jmp_r        = ~(branch_call_r | branch_ret_r);
     end
@@ -378,23 +330,23 @@ begin
 end
 else if (opcode_valid_i)
 begin
-    branch_taken_q   <= branch_r && opcode_valid_i & branch_taken_r;
-    branch_ntaken_q  <= branch_r && opcode_valid_i & ~branch_taken_r;
+    branch_taken_q   <= branch_r &  branch_taken_r;
+    branch_ntaken_q  <= branch_r & ~branch_taken_r;
+    branch_call_q    <= branch_r &  branch_call_r;
+    branch_ret_q     <= branch_r &  branch_ret_r;
+    branch_jmp_q     <= branch_r &  branch_jmp_r;
     pc_x_q           <= branch_taken_r ? branch_target_r : opcode_pc_i + 32'd4;
-    branch_call_q    <= branch_r && opcode_valid_i && branch_call_r;
-    branch_ret_q     <= branch_r && opcode_valid_i && branch_ret_r;
-    branch_jmp_q     <= branch_r && opcode_valid_i && branch_jmp_r;
-    pc_m_q           <= opcode_pc_i;
+    pc_m_q           <=                                    opcode_pc_i;
 end
 
-assign branch_request_o   = branch_taken_q | branch_ntaken_q;
-assign branch_is_taken_o  = branch_taken_q;
+assign branch_request_o      = branch_taken_q | branch_ntaken_q;
+assign branch_is_taken_o     = branch_taken_q;
 assign branch_is_not_taken_o = branch_ntaken_q;
-assign branch_source_o    = pc_m_q;
-assign branch_pc_o        = pc_x_q;
-assign branch_is_call_o   = branch_call_q;
-assign branch_is_ret_o    = branch_ret_q;
-assign branch_is_jmp_o    = branch_jmp_q;
+assign branch_source_o       = pc_m_q;
+assign branch_pc_o           = pc_x_q;
+assign branch_is_call_o      = branch_call_q;
+assign branch_is_ret_o       = branch_ret_q;
+assign branch_is_jmp_o       = branch_jmp_q;
 
 assign branch_d_request_o = (branch_r && opcode_valid_i && branch_taken_r);
 assign branch_d_pc_o      = branch_target_r;

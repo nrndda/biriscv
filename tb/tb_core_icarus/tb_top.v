@@ -7,11 +7,15 @@ reg [7:0] mem[131072:0];
 integer i;
 integer f;
 
+integer trap;
+integer trace_file;
+
 initial
 begin
+    trap = 0;
     $display("Starting bench");
 
-    if (`TRACE)
+    if (`DUMPDB)
     begin
         $dumpfile("waveform.vcd");
         $dumpvars(0, tb_top);
@@ -31,6 +35,26 @@ begin
     i = $fread(mem, f);
     for (i=0;i<131072;i=i+1)
         u_mem.write(i, mem[i]);
+    repeat (1000000) @(posedge clk);
+    trap = 1;
+    repeat (10) @(posedge clk);
+    $finish;
+end
+
+initial begin
+  if (`TRACE) begin
+    trace_file = $fopen("testbench.trace", "w");
+    @(negedge rst);
+    while (!trap) begin
+      @(posedge clk);
+      if (u_dut.u_issue.pipe0_valid_wb_w)
+        $fwrite(trace_file, "%x\n", {4'h0,u_dut.u_issue.pipe0_pc_wb_w});
+      if (u_dut.u_issue.pipe1_valid_wb_w)
+        $fwrite(trace_file, "%x\n", {4'h0,u_dut.u_issue.pipe1_pc_wb_w});
+    end
+    $fclose(trace_file);
+    $display("Finished writing testbench.trace.");
+  end
 end
 
 initial

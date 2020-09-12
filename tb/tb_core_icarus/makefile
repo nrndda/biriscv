@@ -15,9 +15,10 @@ endif
 ###############################################################################
 # Variables: Defaults
 ###############################################################################
+DUMPDB         ?= 1
 TRACE          ?= 1
 
-SRC_V_DIR      ?= ../../src/core .
+SRC_V_DIR      ?= ../../src/core ../../src/defines .
 SRC_DIR        ?= .
 
 EXE            ?= output.out
@@ -28,8 +29,10 @@ EXE            ?= output.out
 SRC_V       ?= $(foreach src,$(SRC_V_DIR),$(wildcard $(src)/*.v))
 
 VFLAGS      += $(patsubst %,-I%,$(SRC_V_DIR))
+VFLAGS      += -DDUMPDB=$(DUMPDB)
 VFLAGS      += -DTRACE=$(TRACE)
 VFLAGS      += -Dverilog_sim
+VFLAGS      += -Wall
 
 ###############################################################################
 # Variables: Lists of objects, source and deps
@@ -52,10 +55,10 @@ $(BUILD_DIR)/$(EXE): $(SRC_V) | $(BUILD_DIR)
 	iverilog -o $@ $(SRC_V) $(VFLAGS)
 
 run: $(BUILD_DIR)/$(EXE) $(BUILD_DIR)/tcm.bin
-	vvp $(BUILD_DIR)/$(EXE) -vcd
+	vvp $(BUILD_DIR)/$(EXE) -lxt2
 
 view:
-	gtkwave waveform.vcd gtksettings.sav  
+	gtkwave waveform.vcd gtksettings.sav
 
 clean:
 	rm -rf $(BUILD_DIR) *.vcd

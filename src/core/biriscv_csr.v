@@ -81,6 +81,7 @@ module biriscv_csr
 // Includes
 //-----------------------------------------------------------------
 `include "biriscv_defs.v"
+`include "biriscv_defs_dec.v"
 
 //-----------------------------------------------------------------
 // Registers / Wires
