@@ -169,7 +169,7 @@ always @* begin:ALU_DEC
     alu_input_a_r  = opcode_pc_i;
     alu_input_b_r  = U_imm_r;
   end else
-  if (((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) || ((opcode_opcode_i & `INST_JALR_MASK) == `INST_JALR)) begin:JAL_JALR
+  if (branch_r) begin:PC_INC
     alu_func_r     = `ALU_ADD;
     alu_input_a_r  = opcode_pc_i;
     alu_input_b_r  = 32'd4;
@@ -179,7 +179,6 @@ always @* begin:ALU_DEC
     alu_input_b_r  = 32'b0;
   end
 end
-
 
 //-------------------------------------------------------------
 // ALU
@@ -202,42 +201,6 @@ always @ (posedge clk_i) if (~hold_i) result_q <= alu_p_w;
 
 assign writeback_value_o  = result_q;
 
-//-----------------------------------------------------------------
-// less_than_signed: Less than operator (signed)
-// Inputs: x = left operand, y = right operand
-// Return: (int)x < (int)y
-//-----------------------------------------------------------------
-function [0:0] less_than_signed;
-    input  [31:0] x;
-    input  [31:0] y;
-    reg [31:0] v;
-begin
-    v = (x - y);
-    if (x[31] != y[31])
-        less_than_signed = x[31];
-    else
-        less_than_signed = v[31];
-end
-endfunction
-
-//-----------------------------------------------------------------
-// greater_than_signed: Greater than operator (signed)
-// Inputs: x = left operand, y = right operand
-// Return: (int)x > (int)y
-//-----------------------------------------------------------------
-function [0:0] greater_than_signed;
-    input  [31:0] x;
-    input  [31:0] y;
-    reg [31:0] v;
-begin
-    v = (y - x);
-    if (x[31] != y[31])
-        greater_than_signed = y[31];
-    else
-        greater_than_signed = v[31];
-end
-endfunction
-
 //-------------------------------------------------------------
 // Execute - Branch operations
 //-------------------------------------------------------------
@@ -248,65 +211,42 @@ reg        branch_call_r;
 reg        branch_ret_r;
 reg        branch_jmp_r;
 
-always @ *
-begin
-    branch_r        = 1'b0;
-    branch_taken_r  = 1'b0;
-    branch_call_r   = 1'b0;
-    branch_ret_r    = 1'b0;
-    branch_jmp_r    = 1'b0;
+wire BEQ  = opcode_ra_operand_i == opcode_rb_operand_i;
+wire BLTU = opcode_ra_operand_i  < opcode_rb_operand_i;
+wire BLT  = opcode_ra_operand_i  < opcode_rb_operand_i & opcode_ra_operand_i[31] == opcode_rb_operand_i[31]
+                                                       | opcode_ra_operand_i[31] & ~opcode_rb_operand_i[31];
 
-    // Default branch_r target is relative to current PC
-    branch_target_r = opcode_pc_i + B_imm_r;
+always @* begin
+  branch_r        = 1'b1;
+  branch_taken_r  = 1'b0;
+  branch_call_r   = 1'b0;
+  branch_ret_r    = 1'b0;
+  branch_jmp_r    = 1'b0;
 
-    if ((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) // jal
-    begin
-        branch_r        = 1'b1;
-        branch_taken_r  = 1'b1;
-        branch_target_r = opcode_pc_i + J_imm_r;
-        branch_call_r   = (opcode_rd_idx_i == 5'd1); // RA
-        branch_jmp_r    = 1'b1;
-    end
-    else if ((opcode_opcode_i & `INST_JALR_MASK) == `INST_JALR) // jalr
-    begin
-        branch_r            = 1'b1;
-        branch_taken_r      = 1'b1;
-        branch_target_r     = opcode_ra_operand_i + I_imm_r;
-        branch_target_r[0]  = 1'b0;
-        branch_ret_r        = (opcode_ra_idx_i == 5'd1 && I_imm_r[11:0] == 12'b0); // RA
-        branch_call_r       = ~branch_ret_r && (opcode_rd_idx_i == 5'd1); // RA
-        branch_jmp_r        = ~(branch_call_r | branch_ret_r);
-    end
-    else if ((opcode_opcode_i & `INST_BEQ_MASK) == `INST_BEQ) // beq
-    begin
-        branch_r      = 1'b1;
-        branch_taken_r= (opcode_ra_operand_i == opcode_rb_operand_i);
-    end
-    else if ((opcode_opcode_i & `INST_BNE_MASK) == `INST_BNE) // bne
-    begin
-        branch_r      = 1'b1;    
-        branch_taken_r= (opcode_ra_operand_i != opcode_rb_operand_i);
-    end
-    else if ((opcode_opcode_i & `INST_BLT_MASK) == `INST_BLT) // blt
-    begin
-        branch_r      = 1'b1;
-        branch_taken_r= less_than_signed(opcode_ra_operand_i, opcode_rb_operand_i);
-    end
-    else if ((opcode_opcode_i & `INST_BGE_MASK) == `INST_BGE) // bge
-    begin
-        branch_r      = 1'b1;    
-        branch_taken_r= greater_than_signed(opcode_ra_operand_i,opcode_rb_operand_i) | (opcode_ra_operand_i == opcode_rb_operand_i);
-    end
-    else if ((opcode_opcode_i & `INST_BLTU_MASK) == `INST_BLTU) // bltu
-    begin
-        branch_r      = 1'b1;    
-        branch_taken_r= (opcode_ra_operand_i < opcode_rb_operand_i);
-    end
-    else if ((opcode_opcode_i & `INST_BGEU_MASK) == `INST_BGEU) // bgeu
-    begin
-        branch_r      = 1'b1;
-        branch_taken_r= (opcode_ra_operand_i >= opcode_rb_operand_i);
-    end
+  // Default branch_r target is relative to current PC
+  branch_target_r = opcode_pc_i + B_imm_r;
+
+  if ((opcode_opcode_i & `INST_JAL_MASK) == `INST_JAL) begin:JAL
+    branch_taken_r  = 1'b1;
+    branch_target_r = opcode_pc_i + J_imm_r;
+    branch_call_r   = (opcode_rd_idx_i == 5'd1); // RA
+    branch_jmp_r    = 1'b1;
+  end else
+  if ((opcode_opcode_i & `INST_JALR_MASK) == `INST_JALR) begin:JALR
+    branch_taken_r      = 1'b1;
+    branch_target_r     = opcode_ra_operand_i + I_imm_r;
+    branch_target_r[0]  = 1'b0;
+    branch_ret_r        = (opcode_ra_idx_i == 5'd1 && I_imm_r[11:0] == 12'b0); // RA
+    branch_call_r       = ~branch_ret_r && (opcode_rd_idx_i == 5'd1); // RA
+    branch_jmp_r        = ~(branch_call_r | branch_ret_r);
+  end else
+  if ((opcode_opcode_i & `INST_BEQ_MASK ) == `INST_BEQ ) branch_taken_r=  BEQ ; else
+  if ((opcode_opcode_i & `INST_BNE_MASK ) == `INST_BNE ) branch_taken_r= ~BEQ ; else
+  if ((opcode_opcode_i & `INST_BLT_MASK ) == `INST_BLT ) branch_taken_r=  BLT ; else
+  if ((opcode_opcode_i & `INST_BGE_MASK ) == `INST_BGE ) branch_taken_r= ~BLT ; else
+  if ((opcode_opcode_i & `INST_BLTU_MASK) == `INST_BLTU) branch_taken_r=  BLTU; else
+  if ((opcode_opcode_i & `INST_BGEU_MASK) == `INST_BGEU) branch_taken_r= ~BLTU; else
+                                                         branch_r      =  1'b0;
 end
 
 reg        branch_taken_q;
@@ -318,26 +258,22 @@ reg        branch_ret_q;
 reg        branch_jmp_q;
 
 always @ (posedge clk_i or posedge rst_i)
-if (rst_i)
-begin
-    branch_taken_q   <= 1'b0;
-    branch_ntaken_q  <= 1'b0;
-    pc_x_q           <= 32'b0;
-    pc_m_q           <= 32'b0;
-    branch_call_q    <= 1'b0;
-    branch_ret_q     <= 1'b0;
-    branch_jmp_q     <= 1'b0;
+if (rst_i) begin
+  branch_taken_q   <= 1'b0;
+  branch_ntaken_q  <= 1'b0;
+  branch_call_q    <= 1'b0;
+  branch_ret_q     <= 1'b0;
+  branch_jmp_q     <= 1'b0;
+end else
+if (opcode_valid_i) begin
+  branch_taken_q   <= branch_r &  branch_taken_r;
+  branch_ntaken_q  <= branch_r & ~branch_taken_r;
+  branch_call_q    <= branch_r &  branch_call_r;
+  branch_ret_q     <= branch_r &  branch_ret_r;
+  branch_jmp_q     <= branch_r &  branch_jmp_r;
 end
-else if (opcode_valid_i)
-begin
-    branch_taken_q   <= branch_r &  branch_taken_r;
-    branch_ntaken_q  <= branch_r & ~branch_taken_r;
-    branch_call_q    <= branch_r &  branch_call_r;
-    branch_ret_q     <= branch_r &  branch_ret_r;
-    branch_jmp_q     <= branch_r &  branch_jmp_r;
-    pc_x_q           <= branch_taken_r ? branch_target_r : opcode_pc_i + 32'd4;
-    pc_m_q           <=                                    opcode_pc_i;
-end
+always @ (posedge clk_i) if (opcode_valid_i) pc_x_q <= branch_taken_r ? branch_target_r : alu_p_w;
+always @ (posedge clk_i) if (opcode_valid_i) pc_m_q <= opcode_pc_i;
 
 assign branch_request_o      = branch_taken_q | branch_ntaken_q;
 assign branch_is_taken_o     = branch_taken_q;
@@ -348,10 +284,8 @@ assign branch_is_call_o      = branch_call_q;
 assign branch_is_ret_o       = branch_ret_q;
 assign branch_is_jmp_o       = branch_jmp_q;
 
-assign branch_d_request_o = (branch_r && opcode_valid_i && branch_taken_r);
+assign branch_d_request_o = branch_r & opcode_valid_i & branch_taken_r;
 assign branch_d_pc_o      = branch_target_r;
 assign branch_d_priv_o    = 2'b0; // don't care
-
-
 
 endmodule
