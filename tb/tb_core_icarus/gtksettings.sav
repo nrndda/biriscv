@@ -1,30 +1,34 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Mon Feb 24 23:52:21 2020
+[*] GTKWave Analyzer v3.3.99 (w)1999-2019 BSI
+[*] Sat Sep 12 23:07:10 2020
 [*]
-[timestart] 0
-[size] 2560 1385
+[dumpfile] "/home/nrndda/git/biriscv/tb/tb_core_icarus/waveform.vcd"
+[dumpfile_mtime] "Sat Sep 12 12:59:16 2020"
+[dumpfile_size] 325743
+[savefile] "/home/nrndda/git/biriscv/tb/tb_core_icarus/gtksettings.sav"
+[timestart] 236
+[size] 2560 1017
 [pos] -1 -1
-*-12.000000 9125 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.551532 290 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb_top.
 [treeopen] tb_top.u_dut.
 [treeopen] tb_top.u_dut.u_issue.
 [treeopen] tb_top.u_dut.u_issue.u_regfile.
-[sst_width] 202
-[signals_width] 206
+[sst_width] 219
+[signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 420
+[sst_vpaned_height] 403
 @28
-tb_top.clk
-tb_top.rst
+tb_top.clk[0]
+tb_top.rst[0]
 @800200
 -I
 @28
-tb_top.mem_i_rd_w
+tb_top.mem_i_rd_w[0]
 @22
 tb_top.mem_i_pc_w[31:0]
 @28
-tb_top.mem_i_valid_w
+tb_top.mem_i_valid_w[0]
 @22
 tb_top.mem_i_inst_w[63:0]
 @1000200
@@ -32,21 +36,20 @@ tb_top.mem_i_inst_w[63:0]
 @800200
 -D
 @28
-tb_top.mem_d_rd_w
+tb_top.mem_d_rd_w[0]
 @22
 tb_top.mem_d_wr_w[3:0]
 tb_top.mem_d_addr_w[31:0]
 tb_top.u_mem.mem_d_req_tag_i[10:0]
 tb_top.mem_d_data_wr_w[31:0]
-@29
-tb_top.mem_d_accept_w
 @28
-tb_top.mem_d_ack_w
+tb_top.mem_d_accept_w[0]
+tb_top.mem_d_ack_w[0]
 @22
 tb_top.u_mem.mem_d_resp_tag_o[10:0]
 tb_top.mem_d_data_rd_w[31:0]
 @28
-tb_top.mem_d_error_w
+tb_top.mem_d_error_w[0]
 @1000200
 -D
 @800200
@@ -60,7 +63,7 @@ tb_top.u_dut.u_issue.u_pipe0_ctrl.pc_e2_q[31:0]
 tb_top.u_dut.u_issue.u_pipe0_ctrl.pc_wb_q[31:0]
 @1000200
 -PC
-@800200
+@c00200
 -Regfile
 @22
 tb_top.u_dut.u_issue.u_regfile.REGFILE.x0_zero_w[31:0]
@@ -95,7 +98,48 @@ tb_top.u_dut.u_issue.u_regfile.REGFILE.x28_t3_w[31:0]
 tb_top.u_dut.u_issue.u_regfile.REGFILE.x29_t4_w[31:0]
 tb_top.u_dut.u_issue.u_regfile.REGFILE.x30_t5_w[31:0]
 tb_top.u_dut.u_issue.u_regfile.REGFILE.x31_t6_w[31:0]
-@1000200
+@1401200
 -Regfile
+@800200
+-pipe0
+@28
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_valid_i[0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_accept_i[0]
+@22
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_pc_i[31:0]
+@28
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_csr_i[0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_branch_i[0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_lsu_i[0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_div_i[0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.issue_mul_i[0]
+@22
+tb_top.u_dut.u_issue.u_pipe0_ctrl.ctrl_e1_q[9:0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.ctrl_e2_q[9:0]
+tb_top.u_dut.u_issue.u_pipe0_ctrl.ctrl_wb_q[9:0]
+@1000200
+-pipe0
+@800200
+-pipe1
+@29
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_valid_i[0]
+@28
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_accept_i[0]
+@22
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_pc_i[31:0]
+@28
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_csr_i[0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_branch_i[0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_lsu_i[0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_div_i[0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.issue_mul_i[0]
+@22
+tb_top.u_dut.u_issue.u_pipe1_ctrl.ctrl_e1_q[9:0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.ctrl_e2_q[9:0]
+tb_top.u_dut.u_issue.u_pipe1_ctrl.ctrl_wb_q[9:0]
+@1000200
+-pipe1
+@200
+-
 [pattern_trace] 1
 [pattern_trace] 0

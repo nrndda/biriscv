@@ -1,27 +1,3 @@
-//-----------------------------------------------------------------
-//                         biRISC-V CPU
-//                            V0.8.0
-//                     Ultra-Embedded.com
-//                     Copyright 2019-2020
-//
-//                   admin@ultra-embedded.com
-//
-//                     License: Apache 2.0
-//-----------------------------------------------------------------
-// Copyright 2020 Ultra-Embedded.com
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//     http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
 module biriscv_csr_regfile
 //-----------------------------------------------------------------
 // Params
@@ -41,7 +17,6 @@ module biriscv_csr_regfile
     ,input           timer_intr_i
 
     ,input [31:0]    cpu_id_i
-    ,input [31:0]    misa_i
 
     ,input [5:0]     exception_i
     ,input [31:0]    exception_pc_i
@@ -175,7 +150,7 @@ begin
     `CSR_MCYCLE,
     `CSR_MTIME:    rdata_r = csr_mcycle_q;
     `CSR_MHARTID:  rdata_r = cpu_id_i;
-    `CSR_MISA:     rdata_r = misa_i;
+    `CSR_MISA:     rdata_r = `MISA_RV32 | `MISA_RVI | `MISA_RVM;
     `CSR_MEDELEG:  rdata_r = SUPPORT_SUPER ? (csr_medeleg_q & `CSR_MEDELEG_MASK) : 32'b0;
     `CSR_MIDELEG:  rdata_r = SUPPORT_SUPER ? (csr_mideleg_q & `CSR_MIDELEG_MASK) : 32'b0;
     // Non-std behaviour

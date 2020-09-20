@@ -29,14 +29,12 @@ module riscv_core
 //-----------------------------------------------------------------
 #(
      parameter SUPPORT_BRANCH_PREDICTION = 1
-    ,parameter SUPPORT_MULDIV   = 1
     ,parameter SUPPORT_SUPER    = 0
     ,parameter SUPPORT_MMU      = 0
     ,parameter SUPPORT_DUAL_ISSUE = 1
     ,parameter SUPPORT_LOAD_BYPASS = 1
     ,parameter SUPPORT_MUL_BYPASS = 1
     ,parameter SUPPORT_REGFILE_XILINX = 0
-    ,parameter EXTRA_DECODE_STAGE = 0
     ,parameter MEM_CACHE_ADDR_MIN = 32'h80000000
     ,parameter MEM_CACHE_ADDR_MAX = 32'h8fffffff
     ,parameter NUM_BTB_ENTRIES  = 32
@@ -99,7 +97,6 @@ wire  [ 31:0]  writeback_mem_value_w;
 wire  [ 31:0]  writeback_div_value_w;
 wire           csr_opcode_valid_w;
 wire           branch_csr_request_w;
-wire  [ 63:0]  mmu_ifetch_inst_w;
 wire           mmu_lsu_error_w;
 wire  [ 31:0]  fetch0_pc_w;
 wire           branch_exec0_is_call_w;
@@ -256,9 +253,7 @@ wire           mmu_store_fault_w;
 biriscv_frontend
 #(
      .SUPPORT_BRANCH_PREDICTION(SUPPORT_BRANCH_PREDICTION)
-    ,.SUPPORT_MULDIV(SUPPORT_MULDIV)
     ,.SUPPORT_MMU(SUPPORT_MMU)
-    ,.EXTRA_DECODE_STAGE(EXTRA_DECODE_STAGE)
     ,.NUM_BTB_ENTRIES(NUM_BTB_ENTRIES)
     ,.NUM_BTB_ENTRIES_W(NUM_BTB_ENTRIES_W)
     ,.NUM_BHT_ENTRIES(NUM_BHT_ENTRIES)
@@ -277,7 +272,7 @@ u_frontend
     ,.icache_accept_i(mmu_ifetch_accept_w)
     ,.icache_valid_i(mmu_ifetch_valid_w)
     ,.icache_error_i(mmu_ifetch_error_w)
-    ,.icache_inst_i(mmu_ifetch_inst_w)
+    ,.icache_inst_i(mem_i_inst_i)
     ,.icache_page_fault_i(fetch_in_fault_w)
     ,.fetch0_accept_i(fetch0_accept_w)
     ,.fetch1_accept_i(fetch1_accept_w)
@@ -353,7 +348,6 @@ u_mmu
     ,.fetch_out_accept_i(mem_i_accept_i)
     ,.fetch_out_valid_i(mem_i_valid_i)
     ,.fetch_out_error_i(mem_i_error_i)
-    ,.fetch_out_inst_i(mem_i_inst_i)
     ,.lsu_in_addr_i(mmu_lsu_addr_w)
     ,.lsu_in_data_wr_i(mmu_lsu_data_wr_w)
     ,.lsu_in_rd_i(mmu_lsu_rd_w)
@@ -373,7 +367,6 @@ u_mmu
     ,.fetch_in_accept_o(mmu_ifetch_accept_w)
     ,.fetch_in_valid_o(mmu_ifetch_valid_w)
     ,.fetch_in_error_o(mmu_ifetch_error_w)
-    ,.fetch_in_inst_o(mmu_ifetch_inst_w)
     ,.fetch_out_rd_o(mem_i_rd_o)
     ,.fetch_out_flush_o(mem_i_flush_o)
     ,.fetch_out_invalidate_o(mem_i_invalidate_o)
@@ -444,8 +437,7 @@ u_lsu
 
 biriscv_csr
 #(
-     .SUPPORT_MULDIV(SUPPORT_MULDIV)
-    ,.SUPPORT_SUPER(SUPPORT_SUPER)
+    .SUPPORT_SUPER(SUPPORT_SUPER)
 )
 u_csr
 (
@@ -536,8 +528,7 @@ u_div
 
 biriscv_issue
 #(
-     .SUPPORT_MULDIV(SUPPORT_MULDIV)
-    ,.SUPPORT_DUAL_ISSUE(SUPPORT_DUAL_ISSUE)
+     .SUPPORT_DUAL_ISSUE(SUPPORT_DUAL_ISSUE)
     ,.SUPPORT_LOAD_BYPASS(SUPPORT_LOAD_BYPASS)
     ,.SUPPORT_MUL_BYPASS(SUPPORT_MUL_BYPASS)
     ,.SUPPORT_REGFILE_XILINX(SUPPORT_REGFILE_XILINX)

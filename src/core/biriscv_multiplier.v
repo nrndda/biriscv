@@ -17,8 +17,8 @@ module biriscv_multiplier
     // Outputs
     ,output [ 31:0]  writeback_value_o
 );
-
-`include "biriscv_defs_dec.v"
+`include "biriscv_defs_rv32i.v"
+`include "biriscv_defs_rv32m.v"
 
 localparam MULT_STAGES = 2; // 2 or 3
 

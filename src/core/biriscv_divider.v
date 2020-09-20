@@ -17,8 +17,8 @@ module biriscv_divider
     ,output          writeback_valid_o
     ,output [ 31:0]  writeback_value_o
 );
-
-`include "biriscv_defs_dec.v"
+`include "biriscv_defs_rv32i.v"
+`include "biriscv_defs_rv32m.v"
 
 reg          valid_q;
 reg  [31:0]  wb_result_q;

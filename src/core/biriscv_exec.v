@@ -34,7 +34,7 @@ module biriscv_exec
 //-----------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------
-`include "biriscv_defs_dec.v"
+`include "biriscv_defs_rv32i.v"
 `include "biriscv_defs_alu.v"
 
 //-------------------------------------------------------------
@@ -172,7 +172,7 @@ always @* begin:ALU_DEC
   if (branch_r) begin:PC_INC
     alu_func_r     = `ALU_ADD;
     alu_input_a_r  = opcode_pc_i;
-    alu_input_b_r  = 32'd4;
+    alu_input_b_r  = 32'd4;//TODO Add support for compressed +2
   end else begin
     alu_func_r     = `ALU_NONE;
     alu_input_a_r  = 32'b0;

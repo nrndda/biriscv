@@ -52,7 +52,6 @@ module biriscv_mmu
     ,input           fetch_out_accept_i
     ,input           fetch_out_valid_i
     ,input           fetch_out_error_i
-    ,input  [ 63:0]  fetch_out_inst_i
     ,input  [ 31:0]  lsu_in_addr_i
     ,input  [ 31:0]  lsu_in_data_wr_i
     ,input           lsu_in_rd_i
@@ -72,7 +71,6 @@ module biriscv_mmu
     ,output          fetch_in_accept_o
     ,output          fetch_in_valid_o
     ,output          fetch_in_error_o
-    ,output [ 63:0]  fetch_in_inst_o
     ,output          fetch_out_rd_o
     ,output          fetch_out_flush_o
     ,output          fetch_out_invalidate_o
@@ -337,7 +335,6 @@ begin
     assign fetch_in_valid_o       = fetch_out_valid_i | pc_fault_q;
     assign fetch_in_error_o       = fetch_out_valid_i & fetch_out_error_i;
     assign fetch_in_fault_o       = pc_fault_q;
-    assign fetch_in_inst_o        = fetch_out_inst_i;
 
     //-----------------------------------------------------------------
     // DMMU TLB
@@ -528,7 +525,6 @@ begin
     assign fetch_in_valid_o       = fetch_out_valid_i;
     assign fetch_in_error_o       = fetch_out_error_i;
     assign fetch_in_fault_o       = 1'b0;
-    assign fetch_in_inst_o        = fetch_out_inst_i;
 
     assign lsu_out_rd_o           = lsu_in_rd_i;
     assign lsu_out_wr_o           = lsu_in_wr_i;

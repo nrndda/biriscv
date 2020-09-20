@@ -28,8 +28,7 @@ module biriscv_csr
 // Params
 //-----------------------------------------------------------------
 #(
-     parameter SUPPORT_MULDIV   = 1
-    ,parameter SUPPORT_SUPER    = 1
+    parameter SUPPORT_SUPER    = 1
 )
 //-----------------------------------------------------------------
 // Ports
@@ -81,7 +80,9 @@ module biriscv_csr
 // Includes
 //-----------------------------------------------------------------
 `include "biriscv_defs.v"
-`include "biriscv_defs_dec.v"
+`include "biriscv_defs_rv32i.v"
+`include "biriscv_defs_Zicsr.v"
+`include "biriscv_defs_Zifence.v"
 
 //-----------------------------------------------------------------
 // Registers / Wires
@@ -138,8 +139,6 @@ wire satp_update_w = (opcode_valid_i && (set_r || clr_r) && csr_write_r && (opco
 //-----------------------------------------------------------------
 wire timer_irq_w = 1'b0;
 
-wire [31:0] misa_w = SUPPORT_MULDIV ? (`MISA_RV32 | `MISA_RVI | `MISA_RVM): (`MISA_RV32 | `MISA_RVI);
-
 wire [31:0] csr_rdata_w;
 
 wire        csr_branch_w;
@@ -160,7 +159,6 @@ u_csrfile
     ,.ext_intr_i(intr_i)
     ,.timer_intr_i(timer_irq_w)
     ,.cpu_id_i(cpu_id_i)
-    ,.misa_i(misa_w)
 
     // Issue
     ,.csr_ren_i(opcode_valid_i)

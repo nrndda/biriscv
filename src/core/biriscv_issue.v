@@ -28,8 +28,7 @@ module biriscv_issue
 // Params
 //-----------------------------------------------------------------
 #(
-     parameter SUPPORT_MULDIV   = 1
-    ,parameter SUPPORT_DUAL_ISSUE = 1
+     parameter SUPPORT_DUAL_ISSUE = 1
     ,parameter SUPPORT_LOAD_BYPASS = 1
     ,parameter SUPPORT_MUL_BYPASS = 1
     ,parameter SUPPORT_REGFILE_XILINX = 0
@@ -184,7 +183,6 @@ module biriscv_issue
 `include "biriscv_defs.v"
 
 wire enable_dual_issue_w = SUPPORT_DUAL_ISSUE;
-wire enable_muldiv_w     = SUPPORT_MULDIV;
 wire enable_mul_bypass_w = SUPPORT_MUL_BYPASS;
 
 wire stall_w;
@@ -714,9 +712,9 @@ begin
 end
 
 assign lsu_opcode_valid_o   = (pipe1_mux_lsu_r ? opcode_b_issue_r : opcode_a_issue_r) & ~take_interrupt_i;
-assign exec0_opcode_valid_o = opcode_a_issue_r;
-assign mul_opcode_valid_o   = enable_muldiv_w & (pipe1_mux_mul_r ? opcode_b_issue_r : opcode_a_issue_r);
-assign div_opcode_valid_o   = enable_muldiv_w & (opcode_a_issue_r);
+assign exec0_opcode_valid_o =                                       opcode_a_issue_r;
+assign mul_opcode_valid_o   =  pipe1_mux_mul_r ? opcode_b_issue_r : opcode_a_issue_r;
+assign div_opcode_valid_o   =                                       opcode_a_issue_r;
 assign interrupt_inhibit_o  = csr_pending_q || issue_a_csr_w;
 
 assign exec1_opcode_valid_o = opcode_b_issue_r;

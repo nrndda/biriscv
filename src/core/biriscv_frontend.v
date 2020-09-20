@@ -29,9 +29,7 @@ module biriscv_frontend
 //-----------------------------------------------------------------
 #(
      parameter SUPPORT_BRANCH_PREDICTION = 1
-    ,parameter SUPPORT_MULDIV   = 1
     ,parameter SUPPORT_MMU      = 1
-    ,parameter EXTRA_DECODE_STAGE = 0
     ,parameter NUM_BTB_ENTRIES  = 32
     ,parameter NUM_BTB_ENTRIES_W = 5
     ,parameter NUM_BHT_ENTRIES  = 512
@@ -153,10 +151,6 @@ u_npc
 
 
 biriscv_decode
-#(
-     .SUPPORT_MULDIV(SUPPORT_MULDIV)
-    ,.EXTRA_DECODE_STAGE(EXTRA_DECODE_STAGE)
-)
 u_decode
 (
     // Inputs
@@ -171,8 +165,6 @@ u_decode
     ,.fetch_out0_accept_i(fetch0_accept_i)
     ,.fetch_out1_accept_i(fetch1_accept_i)
     ,.branch_request_i(branch_request_i)
-    ,.branch_pc_i(branch_pc_i)
-    ,.branch_priv_i(branch_priv_i)
 
     // Outputs
     ,.fetch_in_accept_o(fetch_accept_w)
